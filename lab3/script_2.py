@@ -2,7 +2,7 @@ import boto3
 from time import sleep
 
 
-def create_instance(startup_script):
+def create_instances(startup_script):
     try:
         ec2 = boto3.client("ec2", region_name="ap-south-1")
         # print(dir(ec2))
@@ -42,33 +42,37 @@ def create_instance(startup_script):
         print(e)
 
 
-def list_running_instances(instances):
-    for instance in instances:
-        print(instance["InstanceId"])
+def list_running_instances(Reservations):
+    for reservation in Reservations:
+        for instance in reservation["Instances"]:
+            print(instance["InstanceId"])
 
 
-def check_health_status(instances):
-    for instance in instances:
-        res = ec2.describe_instance_status(
-            InstanceIds=[
-                instance["InstanceId"],
-            ]
-        )['InstanceStatuses'][0]
-        print(res['InstanceStatus'], res["SystemStatus"])
+def check_health_status(Reservations):
+    for reservation in Reservations:
+        for instance in reservation["Instances"]:
+            res = ec2.describe_instance_status(
+                InstanceIds=[
+                    instance["InstanceId"],
+                ]
+            )['InstanceStatuses'][0]
+            print(res['InstanceStatus'], res["SystemStatus"])
 
 
-def stop_running_instances(instances):
-    for instance in instances:
-        ec2.stop_instances(InstanceIds=[instance["InstanceId"]])
-        x = instance["InstanceId"]
-        print(f"[-] {x} : Stopped")
+def stop_running_instances(Reservations):
+    for reservation in Reservations:
+        for instance in reservation["Instances"]:
+            ec2.stop_instances(InstanceIds=[instance["InstanceId"]])
+            x = instance["InstanceId"]
+            print(f"[-] {x} : Stopped")
 
 
-def terminate_running_instances(instances):
-    for instance in instances:
-        ec2.terminate_instances(InstanceIds=[instance["InstanceId"]])
-        x = instance["InstanceId"]
-        print(f"[-] {x} : Terminated")
+def terminate_running_instances(Reservations):
+    for reservation in Reservations:
+        for instance in reservation["Instances"]:
+            ec2.terminate_instances(InstanceIds=[instance["InstanceId"]])
+            x = instance["InstanceId"]
+            print(f"[-] {x} : Terminated")
 
 
 if __name__ == "__main__":
@@ -84,11 +88,13 @@ mkdir /var/www/html/
 aws s3 sync s3://shreyas-bucket12/my-website /var/www/html/
 systemctl restart httpd"""
     ec2 = boto3.client("ec2", region_name="ap-south-1")
-    create_instance(startup_script)
-    response = ec2.describe_instances(
-        Filters=[{"Name": "instance-state-name", "Values": ["running"]}]
-    )
-    instances = response["Reservations"][0]["Instances"]
-    list_running_instances(instances)
-    check_health_status(instances)
-    stop_running_instances(instances)
+    create_instances(startup_script)
+    create_instances(startup_script)
+    create_instances(startup_script)
+    # sleep(30)
+    response = ec2.describe_instances(Filters=[{'Name': 'instance-state-name', 'Values': ['running']}])
+    Reservations = response["Reservations"]
+    list_running_instances(Reservations)
+    check_health_status(Reservations)
+    stop_running_instances(Reservations)
+    terminate_running_instances(Reservations)
