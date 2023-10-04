@@ -2,8 +2,8 @@ const mysql = require('mariadb')
 
 const pool = mysql.createPool({
 		host: "localhost",
-		user: 'shreya',
-		password: 'shreya123',
+		user: 'user',
+		password: 'pass123',
 		database: 'lab5',
 		waitForConnection:true,
 		connectionLimit:10,
